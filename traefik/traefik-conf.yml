@@ -1,0 +1,28 @@
+serversTransport:
+    insecureSkipVerify: true
+entryPoints:
+    http:
+        address: :80
+    https:
+        address: :443
+    udp:
+        address: :10000/udp
+    tcp:
+        address: :4443
+    ocsbd:
+        address: :3306
+
+providers:
+    docker:
+        endpoint: unix:///var/run/docker.sock
+        exposedByDefault: false
+        network: bridge_proxy_traefik
+        defaultRule: "Host(`{{ index .Labels \"com.docker.compose.service\" }}.lt.desoft.cu`)"
+    file:
+        filename: /etc/traefik/traefik-dynamic-conf.yml
+api:
+    debug: true
+    dashboard: true
+log:
+    level: info
+    filePath: /var/log/traefik-log.log

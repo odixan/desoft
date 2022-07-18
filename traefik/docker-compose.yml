@@ -1,0 +1,71 @@
+version: '3.7'
+networks:
+    traefik_net:
+        internal: true
+        name: bridge_proxy_traefik
+    default:
+
+services:
+# Traefik
+    traefik:
+        image: traefik:v2.5.3 # The official Traefik docker image
+        container_name: traefik
+        restart: unless-stopped
+        ports:
+            - "80:80"
+            - "443:443"
+            #- "3306:3306"
+        volumes:
+            # With this we ask docker to mount these files inside its file
+            # system to have access to them
+            - "/var/run/docker.sock:/var/run/docker.sock:ro"
+            - ./traefik-conf.yml:/etc/traefik/traefik.yaml # Traefik static config
+            - ./traefik-dynamic-conf.yml:/etc/traefik/traefik-dynamic-conf.yml # Traefik dynamic config
+            - ./devcerts:/etc/certs:ro # SSL Development certificates
+        labels:
+            - traefik.enable=true
+            - traefik.http.routers.traefik.rule=Host(`traefik.lt.desoft.cu`)
+            - traefik.http.routers.traefik.service=api@internal
+            - traefik.http.routers.traefik.tls=true
+            - traefik.http.routers.traefik.entrypoints=https
+            # Note: when used in docker-compose.yml all dollar signs in the hash need to be doubled for escaping.
+            # To create user:password pair, it's possible to use this command:
+            # echo $(htpasswd -nb user password) | sed -e s/\\$/\\$\\$/g
+            #
+            # Also note that dollar signs should NOT be doubled when they not evaluated (e.g. Ansible docker_container module).
+            # antes ---- $$apr1$$QZIpm0W.$$AEIQl9DjXm0OZw4542tRN.
+            #- traefik.http.routers.traefik.middlewares=auth
+            #- traefik.http.middlewares.auth.basicauth.users=admin:$$apr1$$OHBYtix.$$9p8X4ZLvNlThjWZ3xa9m11
+            # global redirect to https
+            - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
+            - "traefik.http.routers.http-catchall.entrypoints=http"
+            - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
+            - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+        networks:
+            - traefik_net
+            - default
+
+# Portainer
+    portainer:
+        image: portainer/portainer-ce:alpine
+        container_name: portainer
+        restart: unless-stopped
+        ports:
+            - '9000:9000'
+        volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock"
+            - "portainer-data:/data"
+        labels:
+            - traefik.enable=true
+            - traefik.http.routers.portainer.entrypoints=https
+            - traefik.http.routers.portainer.tls=true
+            - traefik.http.routers.portainer.service=portainer
+            - traefik.http.services.portainer.loadbalancer.server.port=9000
+        depends_on:
+            - traefik
+        networks:
+            - traefik_net
+            - default
+
+volumes:
+    portainer-data:

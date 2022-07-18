@@ -1,0 +1,6 @@
+tls:
+    stores:
+        default:
+            defaultCertificate:
+                certFile: /etc/certs/lt.desoft.cu+5.pem
+                keyFile: /etc/certs/lt.desoft.cu+5-key.pem

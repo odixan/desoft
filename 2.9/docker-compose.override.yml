@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  ocsapplication:
+    expose:
+      - '80'
+      - '443'
+    labels: 
+      - traefik.enable=true
+      - traefik.http.routers.ocsapplication.entrypoints=https
+      - traefik.http.routers.ocsapplication.tls=true
+      - traefik.http.routers.ocsapplication.rule=Host(`ocs.lt.desoft.cu`)
+    volumes:
+      - ./docker/monkeypatch/ocsinventory-server/docker-entrypoint.sh:/usr/bin/docker-entrypoint.sh
+      - ./docker/monkeypatch/ocsinventory-server/ApiCommon.pm:/ApiCommon.pm
+    networks:
+      traefik_net:
+      localocs:
+  
+  ocsdb:
+    volumes:
+      - ./docker/monkeypatch/mysql/custom.cnf:/etc/mysql/conf.d/custom.cnf
+    networks:
+      localocs:
+
+networks:
+  traefik_net:
+    external: true
+    name: bridge_proxy_traefik
+  localocs:

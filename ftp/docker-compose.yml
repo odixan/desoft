@@ -1,0 +1,15 @@
+version: '3.7'
+
+services:
+    h5:
+        image: clue/h5ai
+        container_name: h5
+        volumes:
+            - ./data:/var/www
+        ports:
+            - "8080:80"
+        labels:
+            - traefik.enable=true
+            - traefik.http.routers.h5.rule=Host(`ssiftp.${DOMAIN_NAME}`)
+            - traefik.http.routers.h5.tls=true
+            - traefik.http.routers.h5.entrypoints=https
